@@ -14,6 +14,7 @@
 - **Icons**: Radix UI Icons (`@radix-ui/react-icons`) for iconography
 - **Routing**: React Router DOM for navigation
 - **Storage**: idb-keyval for IndexedDB operations with PROJECT_PREFIX
+- **State Management**: nanostores (@nanostores/react) for global state
 - **Styling**: Tailwind CSS for additional custom styling when needed
 
 ## Code Style Guidelines
@@ -24,6 +25,8 @@
 - **Naming**: PascalCase for components/interfaces, camelCase for functions/variables
 - **Error Handling**: Use try/catch with specific error messages in console.error()
 - **Component Structure**: Props interface at top, followed by component definition
+- **Component Design**: Follow composable patterns with small, focused components
+- **State Management**: Use nanostores for global state, React state for local UI state
 - **Data Flow**: Sort data by updatedAt timestamp in descending order
 
 ## UI Component Patterns
@@ -34,3 +37,13 @@
 - **Layout**: Use Radix Container, Flex, and Grid for layout
 - **Typography**: Use Radix Heading and Text components for typography
 - **Menus**: Use Radix DropdownMenu component for dropdown menus
+- **Project Components**: Build composable components that accept children or render props
+
+## Project Structure
+
+- **/src/components**: Reusable UI components
+  - **/src/components/project**: Project-specific components
+- **/src/pages**: Top-level page components
+- **/src/stores**: Nanostores for global state management
+- **/src/utils**: Utility functions and helpers
+- **/src/types.ts**: Shared TypeScript interfaces
