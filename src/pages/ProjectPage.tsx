@@ -1,22 +1,23 @@
+import { useStore } from "@nanostores/react";
 import {
   DownloadIcon,
   Pencil1Icon,
-  UploadIcon,
   SpeakerLoudIcon,
   TextIcon,
+  UploadIcon,
 } from "@radix-ui/react-icons";
 import { Container, Flex, Text } from "@radix-ui/themes";
-import { useStore } from "@nanostores/react";
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import ImportProjectModal from "../components/project/ImportProjectModal";
+import ImportSubtitleModal, {
+  SubtitleCue,
+} from "../components/project/ImportSubtitleModal";
+import ImportWaveformModal from "../components/project/ImportWaveformModal";
 import ProjectContent from "../components/project/ProjectContent";
 import ProjectHeader from "../components/project/ProjectHeader";
 import ProjectMenu from "../components/project/ProjectMenu";
 import RenameProjectModal from "../components/project/RenameProjectModal";
-import ImportProjectModal from "../components/project/ImportProjectModal";
-import ImportWaveformModal from "../components/project/ImportWaveformModal";
-import ImportSubtitleModal from "../components/project/ImportSubtitleModal";
-import { SubtitleCue } from "../components/project/ImportSubtitleModal";
 import { projectActions, projectStore } from "../stores/projectStore";
 
 const ProjectPage: React.FC = () => {
@@ -25,8 +26,10 @@ const ProjectPage: React.FC = () => {
   const { currentProject, isLoading, error } = useStore(projectStore);
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [isImportWaveformModalOpen, setIsImportWaveformModalOpen] = useState(false);
-  const [isImportSubtitleModalOpen, setIsImportSubtitleModalOpen] = useState(false);
+  const [isImportWaveformModalOpen, setIsImportWaveformModalOpen] =
+    useState(false);
+  const [isImportSubtitleModalOpen, setIsImportSubtitleModalOpen] =
+    useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -54,17 +57,17 @@ const ProjectPage: React.FC = () => {
   const handleExport = () => {
     const exportData = projectActions.exportProject();
     if (!exportData) return;
-    
+
     const { jsonData, filename } = exportData;
     const blob = new Blob([jsonData], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-    
+
     const a = document.createElement("a");
     a.href = url;
     a.download = filename;
     document.body.appendChild(a);
     a.click();
-    
+
     // Cleanup
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
@@ -137,8 +140,8 @@ const ProjectPage: React.FC = () => {
   }
 
   return (
-    <Container size="3" py="6">
-      <ProjectHeader 
+    <Container maxWidth={"1400px"} py="6">
+      <ProjectHeader
         title={currentProject.title}
         actions={<ProjectMenu items={menuItems} />}
       />

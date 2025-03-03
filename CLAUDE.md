@@ -6,7 +6,7 @@
 - `pnpm build` - Build for production
 - `pnpm preview` - Preview production build
 - `pnpm lint` - Run ESLint
-- `pnpm typecheck` - Run TypeScript type checking (via tsc --noEmit)
+- `pnpm typecheck` - Run TypeScript type checking (via tsc --noEmit --project tsconfig.app.json)
 
 ## UI Frameworks & Libraries
 
@@ -16,6 +16,9 @@
 - **Storage**: idb-keyval for IndexedDB operations with PROJECT_PREFIX
 - **State Management**: nanostores (@nanostores/react) for global state
 - **Styling**: Tailwind CSS for additional custom styling when needed
+- **Data Validation**: zod for validating JSON and form inputs
+- **Subtitle Parsing**: subtitle library for parsing SRT and VTT files
+- **Polyfills**: vite-plugin-node-polyfills for browser compatibility with Node.js modules
 
 ## Code Style Guidelines
 
