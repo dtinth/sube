@@ -2,7 +2,8 @@ import {
   DownloadIcon,
   Pencil1Icon,
   UploadIcon,
-  SpeakerLoudIcon, // Using SpeakerLoudIcon instead of WaveformIcon
+  SpeakerLoudIcon,
+  TextIcon,
 } from "@radix-ui/react-icons";
 import { Container, Flex, Text } from "@radix-ui/themes";
 import { useStore } from "@nanostores/react";
@@ -14,6 +15,8 @@ import ProjectMenu from "../components/project/ProjectMenu";
 import RenameProjectModal from "../components/project/RenameProjectModal";
 import ImportProjectModal from "../components/project/ImportProjectModal";
 import ImportWaveformModal from "../components/project/ImportWaveformModal";
+import ImportSubtitleModal from "../components/project/ImportSubtitleModal";
+import { SubtitleCue } from "../components/project/ImportSubtitleModal";
 import { projectActions, projectStore } from "../stores/projectStore";
 
 const ProjectPage: React.FC = () => {
@@ -23,6 +26,7 @@ const ProjectPage: React.FC = () => {
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isImportWaveformModalOpen, setIsImportWaveformModalOpen] = useState(false);
+  const [isImportSubtitleModalOpen, setIsImportSubtitleModalOpen] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -80,6 +84,13 @@ const ProjectPage: React.FC = () => {
     }
   };
 
+  const handleImportSubtitles = async (subtitles: SubtitleCue[]) => {
+    const success = await projectActions.importSubtitles(subtitles);
+    if (success) {
+      setIsImportSubtitleModalOpen(false);
+    }
+  };
+
   // Define menu items for the ProjectMenu component
   const menuItems = [
     {
@@ -96,6 +107,11 @@ const ProjectPage: React.FC = () => {
       label: "Import Waveform",
       icon: <SpeakerLoudIcon width="16" height="16" />,
       onClick: () => setIsImportWaveformModalOpen(true),
+    },
+    {
+      label: "Import Subtitles",
+      icon: <TextIcon width="16" height="16" />,
+      onClick: () => setIsImportSubtitleModalOpen(true),
     },
     {
       label: "Export",
@@ -146,6 +162,12 @@ const ProjectPage: React.FC = () => {
         isOpen={isImportWaveformModalOpen}
         onClose={() => setIsImportWaveformModalOpen(false)}
         onImport={handleImportWaveform}
+      />
+
+      <ImportSubtitleModal
+        isOpen={isImportSubtitleModalOpen}
+        onClose={() => setIsImportSubtitleModalOpen(false)}
+        onImport={handleImportSubtitles}
       />
     </Container>
   );

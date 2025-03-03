@@ -1,6 +1,7 @@
 import { map } from 'nanostores';
 import { getProject, updateProject, exportProjectToJSON, importProjectFromJSON } from '../utils/storage';
 import { Project } from '../types';
+import { SubtitleCue } from '../components/project/ImportSubtitleModal';
 
 // Store shape
 interface ProjectStoreState {
@@ -99,6 +100,27 @@ export const projectActions = {
       return true;
     } catch (error) {
       console.error('Failed to import waveform:', error);
+      return false;
+    }
+  },
+
+  importSubtitles: async (subtitles: SubtitleCue[]) => {
+    const currentProject = projectStore.get().currentProject;
+    if (!currentProject) return false;
+    
+    try {
+      const updatedProject = await updateProject({
+        ...currentProject,
+        data: {
+          ...currentProject.data,
+          subtitles
+        },
+        updatedAt: Date.now()
+      });
+      projectStore.setKey('currentProject', updatedProject);
+      return true;
+    } catch (error) {
+      console.error('Failed to import subtitles:', error);
       return false;
     }
   }
