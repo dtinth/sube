@@ -10,9 +10,8 @@ import { Container, Flex, Text } from "@radix-ui/themes";
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ImportProjectModal from "../components/project/ImportProjectModal";
-import ImportSubtitleModal, {
-  SubtitleCue,
-} from "../components/project/ImportSubtitleModal";
+import ImportSubtitleModal from "../components/project/ImportSubtitleModal";
+import { SubtitleCue } from "../utils/timeline/types";
 import ImportWaveformModal from "../components/project/ImportWaveformModal";
 import ProjectContent from "../components/project/ProjectContent";
 import ProjectHeader from "../components/project/ProjectHeader";

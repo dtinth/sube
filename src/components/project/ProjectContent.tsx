@@ -2,7 +2,8 @@ import { Card, Flex, Text } from "@radix-ui/themes";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "@nanostores/react";
 import { projectStore } from "../../stores/projectStore";
-import { SubtitleCue } from "./ImportSubtitleModal";
+import { SubtitleCue } from "../../utils/timeline/types";
+import { createTimelineRows } from "../../utils/timeline/createTimelineRows";
 
 interface ProjectContentProps {
   projectId: string;
@@ -18,30 +19,6 @@ const VISIBLE_BUFFER = 2; // extra rows to render above and below viewport
 const MS_PER_POINT = 100; // each point represents 100ms
 
 /**
- * Timeline row structure including subtitles that handles smart wrapping
- */
-interface TimelineRow {
-  startTime: number; // ms
-  endTime: number; // ms
-  startPoint: number;
-  pointCount: number; 
-  width: number; // px
-  subtitles: SubtitleSegment[];
-}
-
-/**
- * A subtitle segment displayed in a row
- */
-interface SubtitleSegment {
-  id: string;
-  start: number; // ms
-  end: number; // ms
-  text: string;
-  startOffsetInRow: number; // px
-  width: number; // px
-}
-
-/**
  * Displays the main content area of the project
  * Shows waveform and subtitles data as a timeline visualization
  */
@@ -52,72 +29,13 @@ const ProjectContent: React.FC<ProjectContentProps> = ({ projectId }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [visibleRows, setVisibleRows] = useState<[number, number]>([0, 10]);
 
-  // Prepare timeline rows with smart wrapping for subtitles
+  // Generate timeline rows using the pure function
   const timelineRows = useMemo(() => {
-    if (!waveform) return [];
-
-    const rows: TimelineRow[] = [];
-    const totalPoints = waveform.length;
-    
-    // Sort subtitles by start time
-    const sortedSubtitles = subtitles ? [...subtitles].sort((a, b) => a.start - b.start) : [];
-    
-    // First pass: create basic rows without subtitle wrapping
-    let currentPoint = 0;
-    let rowIndex = 0;
-    
-    while (currentPoint < totalPoints) {
-      const startPoint = currentPoint;
-      const pointsInRow = Math.min(POINTS_PER_ROW, totalPoints - currentPoint);
-      const startTime = startPoint * MS_PER_POINT;
-      const endTime = startTime + (pointsInRow * MS_PER_POINT);
-      
-      rows.push({
-        startTime,
-        endTime,
-        startPoint,
-        pointCount: pointsInRow,
-        width: pointsInRow * BAR_WIDTH,
-        subtitles: []
-      });
-      
-      currentPoint += pointsInRow;
-      rowIndex++;
-    }
-    
-    // Second pass: simplified - assign subtitles to only the row that contains their starting point
-    if (sortedSubtitles.length > 0) {
-      // For each subtitle, find the row where it starts
-      sortedSubtitles.forEach((subtitle, index) => {
-        // Find the row where this subtitle starts
-        let rowIndex = rows.findIndex(row => 
-          subtitle.start >= row.startTime && subtitle.start < row.endTime
-        );
-        
-        if (rowIndex === -1) {
-          // If the subtitle starts before the timeline, place it in the first row
-          rowIndex = 0;
-          if (subtitle.end < rows[0].startTime) return; // Skip if completely outside the timeline
-        }
-        
-        const row = rows[rowIndex];
-        
-        // Add the subtitle to this row with full width
-        const startOffsetInRow = Math.max(0, (subtitle.start - row.startTime) / MS_PER_POINT * BAR_WIDTH);
-        const width = ((subtitle.end - subtitle.start) / MS_PER_POINT) * BAR_WIDTH;
-        
-        row.subtitles.push({
-          id: subtitle.id || `subtitle-${index}`,
-          start: subtitle.start,
-          end: subtitle.end,
-          text: subtitle.text,
-          startOffsetInRow,
-          width
-        });
-      });
-    }
-    
-    return rows;
+    return createTimelineRows(waveform, subtitles, {
+      barWidth: BAR_WIDTH,
+      pointsPerRow: POINTS_PER_ROW,
+      msPerPoint: MS_PER_POINT
+    });
   }, [waveform, subtitles]);
 
   // Calculate total height of the timeline

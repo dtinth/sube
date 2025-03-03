@@ -1,7 +1,7 @@
 import { map } from 'nanostores';
 import { getProject, updateProject, exportProjectToJSON, importProjectFromJSON } from '../utils/storage';
 import { Project } from '../types';
-import { SubtitleCue } from '../components/project/ImportSubtitleModal';
+import { SubtitleCue } from '../utils/timeline/types';
 
 // Store shape
 interface ProjectStoreState {

@@ -2,19 +2,12 @@ import { Box, Button, Flex, Text } from "@radix-ui/themes";
 import React, { useRef } from "react";
 import Modal from "../Modal";
 import { parseSync } from "subtitle";
+import { SubtitleCue } from "../../utils/timeline/types";
 
 interface ImportSubtitleModalProps {
   isOpen: boolean;
   onClose: () => void;
   onImport: (subtitles: SubtitleCue[]) => void;
-}
-
-export interface SubtitleCue {
-  id?: string;
-  start: number;
-  end: number;
-  text: string;
-  settings?: string;
 }
 
 /**
