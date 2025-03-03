@@ -111,7 +111,6 @@ const ProjectContent: React.FC<ProjectContentProps> = ({ projectId }) => {
           left: 0,
           width: `${row.width}px`,
           height: `${ROW_HEIGHT}px`,
-          backgroundColor: rowIndex % 2 === 0 ? "var(--gray-1)" : "transparent",
           borderBottom: "1px solid var(--gray-3)",
         }}
       >
