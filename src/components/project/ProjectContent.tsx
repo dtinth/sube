@@ -155,40 +155,8 @@ const ProjectContent: React.FC<ProjectContentProps> = ({ projectId }) => {
           ))}
         </div>
 
-        {/* Render subtitles - allow them to overlay the waveform */}
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: `${ROW_HEIGHT}px`,
-          }}
-        >
-          {row.subtitles.map((subtitle, index) => (
-            <div
-              key={`${subtitle.id}-${index}`}
-              style={{
-                position: "absolute",
-                left: `${subtitle.startOffsetInRow}px`,
-                top: "10px",
-                width: `${subtitle.width}px`,
-                maxHeight: `${ROW_HEIGHT - 20}px`,
-                padding: "4px",
-                backgroundColor: "rgba(121, 134, 203, 0.25)",
-                borderRadius: "4px",
-                fontSize: "12px",
-                whiteSpace: "pre-wrap",
-                overflow: "auto",
-                border: "1px solid var(--accent-6)",
-                boxSizing: "border-box",
-                zIndex: 2,
-              }}
-            >
-              {subtitle.text}
-            </div>
-          ))}
-        </div>
+        {/* We don't render subtitles here anymore as they're rendered separately */}
+        {/* This allows Ctrl+F to find subtitle text even when the containing row isn't visible */}
       </div>
     );
   };
@@ -219,7 +187,7 @@ const ProjectContent: React.FC<ProjectContentProps> = ({ projectId }) => {
               {subtitles && ` • Subtitles: ${subtitles.length} cues`}
             </Text>
 
-            {/* Timeline container with virtualized rows */}
+            {/* Timeline container with virtualized rows for waveform but not subtitles */}
             <div
               ref={containerRef}
               style={{
@@ -239,17 +207,54 @@ const ProjectContent: React.FC<ProjectContentProps> = ({ projectId }) => {
                   minWidth: "100%",
                 }}
               >
-                {/* Only render visible rows */}
-                {timelineRows.length > 0 &&
-                  Array.from(
-                    {
-                      length: Math.min(
-                        visibleRows[1] - visibleRows[0] + 1,
-                        timelineRows.length
-                      ),
-                    },
-                    (_, i) => renderRow(i + visibleRows[0])
-                  )}
+                {/* Only render visible waveform rows */}
+                {timelineRows.length > 0 && (
+                  <>
+                    {Array.from(
+                      {
+                        length: Math.min(
+                          visibleRows[1] - visibleRows[0] + 1,
+                          timelineRows.length
+                        ),
+                      },
+                      (_, i) => renderRow(i + visibleRows[0])
+                    )}
+                    
+                    {/* Render ALL subtitle cues to support Ctrl+F */}
+                    <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}>
+                      {timelineRows.map((row, rowIndex) => {
+                        const rowTop = timelineRows
+                          .slice(0, rowIndex)
+                          .reduce((sum, _) => sum + ROW_HEIGHT + ROW_GAP, 0);
+                        
+                        return row.subtitles.map((subtitle, index) => (
+                          <div
+                            key={`all-${subtitle.id}-${index}`}
+                            style={{
+                              position: "absolute",
+                              left: `${subtitle.startOffsetInRow}px`,
+                              top: `${rowTop + 10}px`,
+                              width: `${subtitle.width}px`,
+                              maxHeight: `${ROW_HEIGHT - 20}px`,
+                              padding: "4px",
+                              backgroundColor: "rgba(121, 134, 203, 0.25)",
+                              borderRadius: "4px",
+                              fontSize: "12px",
+                              whiteSpace: "pre-wrap",
+                              overflow: "auto",
+                              border: "1px solid var(--accent-6)",
+                              boxSizing: "border-box",
+                              zIndex: 2,
+                              pointerEvents: "none", // Prevent interaction with hidden subtitles
+                            }}
+                          >
+                            {subtitle.text}
+                          </div>
+                        ));
+                      })}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </>
