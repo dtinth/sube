@@ -32,9 +32,25 @@ export function createTimelineRows(
   const startingPoints: number[] = [];
   let currentPoint = 0;
 
+  let nextSubIndex = 0;
   while (currentPoint < totalPoints) {
     startingPoints.push(currentPoint);
-    currentPoint += pointsPerRow;
+    let rowWidth = pointsPerRow;
+    while (nextSubIndex < sortedSubtitles.length) {
+      const subtitle = sortedSubtitles[nextSubIndex];
+      nextSubIndex++;
+
+      // If the subtitle being considered is after the current row, break
+      if (subtitle.start >= (currentPoint + rowWidth) * msPerPoint) break;
+
+      // If the subtitle would cause the row to exceed the limit, shorten the row
+      // to wrap that subtitle to the next row
+      if (subtitle.end > (currentPoint + rowWidth) * msPerPoint) {
+        rowWidth = Math.floor(subtitle.start / msPerPoint) - currentPoint;
+        break;
+      }
+    }
+    currentPoint += rowWidth;
   }
 
   // First pass part 2: create basic rows without subtitles using the starting points
