@@ -3,5 +3,5 @@ export interface Project {
   title: string;
   createdAt: number;
   updatedAt: number;
-  data?: any; // This will store the project data
+  data?: Record<string, unknown>; // This will store the project data
 }

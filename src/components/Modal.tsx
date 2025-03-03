@@ -1,5 +1,6 @@
 import React, { ReactNode } from 'react';
-import { X } from 'lucide-react';
+import { Cross2Icon } from '@radix-ui/react-icons';
+import { Dialog, Flex, IconButton, Heading, Box } from '@radix-ui/themes';
 
 interface ModalProps {
   isOpen: boolean;
@@ -9,25 +10,24 @@ interface ModalProps {
 }
 
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-4">
-        <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-xl font-semibold">{title}</h2>
-          <button 
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 focus:outline-none"
-          >
-            <X size={20} />
-          </button>
-        </div>
-        <div className="p-4">
+    <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <Dialog.Content>
+        <Flex justify="between" align="center" mb="3">
+          <Dialog.Title>
+            <Heading size="4">{title}</Heading>
+          </Dialog.Title>
+          <Dialog.Close>
+            <IconButton variant="ghost" color="gray">
+              <Cross2Icon />
+            </IconButton>
+          </Dialog.Close>
+        </Flex>
+        <Box>
           {children}
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Dialog.Content>
+    </Dialog.Root>
   );
 };
 

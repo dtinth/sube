@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Folder, Calendar } from 'lucide-react';
+import { FileIcon, ClockIcon } from '@radix-ui/react-icons';
+import { Card, Flex, Text, Box, Heading } from '@radix-ui/themes';
 import { Project } from '../types';
 
 interface ProjectCardProps {
@@ -17,19 +18,24 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
   };
 
   return (
-    <Link 
-      to={`/project/${project.id}`}
-      className="block bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-4 border border-gray-200"
-    >
-      <div className="flex items-center mb-2">
-        <Folder className="text-blue-500 mr-2" size={24} />
-        <h3 className="text-lg font-semibold text-gray-800 truncate">{project.title}</h3>
-      </div>
-      <div className="flex items-center text-sm text-gray-500">
-        <Calendar size={16} className="mr-1" />
-        <span>Updated: {formatDate(project.updatedAt)}</span>
-      </div>
-    </Link>
+    <Card asChild size="2" style={{ cursor: 'pointer' }}>
+      <Link to={`/project/${project.id}`}>
+        <Flex direction="column" gap="2">
+          <Flex align="center" gap="2">
+            <Box style={{ color: 'var(--accent-9)' }}>
+              <FileIcon width="18" height="18" />
+            </Box>
+            <Heading size="3" as="h3" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {project.title}
+            </Heading>
+          </Flex>
+          <Flex align="center" gap="1">
+            <ClockIcon width="14" height="14" />
+            <Text size="1" color="gray">Updated: {formatDate(project.updatedAt)}</Text>
+          </Flex>
+        </Flex>
+      </Link>
+    </Card>
   );
 };
 

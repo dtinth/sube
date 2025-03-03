@@ -1,9 +1,32 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit2, Save, Upload, Download } from 'lucide-react';
-import { getProject, updateProject, exportProjectToJSON, importProjectFromJSON } from '../utils/storage';
-import { Project } from '../types';
-import Modal from '../components/Modal';
+import {
+  ArrowLeftIcon,
+  DotsVerticalIcon,
+  DownloadIcon,
+  Pencil1Icon,
+  UploadIcon,
+} from "@radix-ui/react-icons";
+import {
+  Box,
+  Button,
+  Card,
+  Container,
+  DropdownMenu,
+  Flex,
+  Heading,
+  IconButton,
+  Text,
+  TextField,
+} from "@radix-ui/themes";
+import React, { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import Modal from "../components/Modal";
+import { Project } from "../types";
+import {
+  exportProjectToJSON,
+  getProject,
+  importProjectFromJSON,
+  updateProject,
+} from "../utils/storage";
 
 const ProjectPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -12,13 +35,13 @@ const ProjectPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
+  const [newTitle, setNewTitle] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const loadProject = async () => {
       if (!id) return;
-      
+
       setIsLoading(true);
       try {
         const projectData = await getProject(id);
@@ -26,11 +49,11 @@ const ProjectPage: React.FC = () => {
           setProject(projectData);
           setNewTitle(projectData.title);
         } else {
-          navigate('/');
+          navigate("/");
         }
       } catch (error) {
-        console.error('Failed to load project:', error);
-        navigate('/');
+        console.error("Failed to load project:", error);
+        navigate("/");
       } finally {
         setIsLoading(false);
       }
@@ -41,32 +64,32 @@ const ProjectPage: React.FC = () => {
 
   const handleRename = async () => {
     if (!project || !newTitle.trim()) return;
-    
+
     try {
       const updatedProject = await updateProject({
         ...project,
-        title: newTitle
+        title: newTitle,
       });
       setProject(updatedProject);
       setIsRenameModalOpen(false);
     } catch (error) {
-      console.error('Failed to rename project:', error);
+      console.error("Failed to rename project:", error);
     }
   };
 
   const handleExport = () => {
     if (!project) return;
-    
+
     const jsonData = exportProjectToJSON(project);
-    const blob = new Blob([jsonData], { type: 'application/json' });
+    const blob = new Blob([jsonData], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
+
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `${project.title.replace(/\s+/g, '_')}_${project.id}.json`;
+    a.download = `${project.title.replace(/\s+/g, "_")}_${project.id}.json`;
     document.body.appendChild(a);
     a.click();
-    
+
     // Cleanup
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
@@ -79,20 +102,23 @@ const ProjectPage: React.FC = () => {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !project?.id) return;
-    
+
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
         const jsonData = event.target?.result as string;
-        const updatedProject = await importProjectFromJSON(project.id, jsonData);
+        const updatedProject = await importProjectFromJSON(
+          project.id,
+          jsonData
+        );
         setProject(updatedProject);
         setIsImportModalOpen(false);
         if (fileInputRef.current) {
-          fileInputRef.current.value = '';
+          fileInputRef.current.value = "";
         }
       } catch (error) {
-        console.error('Failed to import project data:', error);
-        alert('Failed to import project data. Please check the file format.');
+        console.error("Failed to import project data:", error);
+        alert("Failed to import project data. Please check the file format.");
       }
     };
     reader.readAsText(file);
@@ -100,65 +126,70 @@ const ProjectPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <p className="text-gray-500">Loading project...</p>
-      </div>
+      <Flex justify="center" align="center" height="100vh">
+        <Text color="gray">Loading project...</Text>
+      </Flex>
     );
   }
 
   if (!project) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <p className="text-red-500">Project not found</p>
-      </div>
+      <Flex justify="center" align="center" height="100vh">
+        <Text color="red">Project not found</Text>
+      </Flex>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex items-center">
-          <button
-            onClick={() => navigate('/')}
-            className="mr-4 p-2 rounded-full hover:bg-gray-100"
+    <Container size="3" py="6">
+      <Flex justify="between" align="center" mb="6">
+        <Flex align="center" gap="3">
+          <IconButton
+            variant="ghost"
+            onClick={() => navigate("/")}
             aria-label="Go back"
           >
-            <ArrowLeft size={24} />
-          </button>
-          <h1 className="text-2xl font-bold text-gray-800">{project.title}</h1>
-        </div>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => setIsRenameModalOpen(true)}
-            className="flex items-center px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700"
-          >
-            <Edit2 size={18} className="mr-2" />
-            Rename
-          </button>
-          <button
-            onClick={handleImportClick}
-            className="flex items-center px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700"
-          >
-            <Upload size={18} className="mr-2" />
-            Import
-          </button>
-          <button
-            onClick={handleExport}
-            className="flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-          >
-            <Download size={18} className="mr-2" />
-            Export
-          </button>
-        </div>
-      </div>
+            <ArrowLeftIcon width="18" height="18" />
+          </IconButton>
+          <Heading size="5">{project.title}</Heading>
+        </Flex>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger>
+            <Button variant="soft">
+              <DotsVerticalIcon />
+              Menu
+            </Button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content>
+            <DropdownMenu.Item onClick={() => setIsRenameModalOpen(true)}>
+              <Pencil1Icon width="16" height="16" />
+              Rename
+            </DropdownMenu.Item>
+            <DropdownMenu.Item onClick={handleImportClick}>
+              <UploadIcon width="16" height="16" />
+              Import
+            </DropdownMenu.Item>
+            <DropdownMenu.Item onClick={handleExport}>
+              <DownloadIcon width="16" height="16" />
+              Export
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+      </Flex>
 
-      <div className="bg-white rounded-lg shadow-md p-8 min-h-[400px]">
-        <div className="text-center text-gray-500">
-          <p className="mb-4">Project ID: {project.id}</p>
-          <p className="text-xl">Project content will be implemented later.</p>
-          <p className="mt-4">This is a placeholder for the project's functionality.</p>
-        </div>
-      </div>
+      <Card size="3" style={{ minHeight: "400px" }}>
+        <Flex direction="column" align="center" justify="center" gap="4">
+          <Text color="gray" size="2">
+            Project ID: {project.id}
+          </Text>
+          <Text size="4" color="gray">
+            Project content will be implemented later.
+          </Text>
+          <Text color="gray">
+            This is a placeholder for the project's functionality.
+          </Text>
+        </Flex>
+      </Card>
 
       <Modal
         isOpen={isRenameModalOpen}
@@ -168,38 +199,35 @@ const ProjectPage: React.FC = () => {
         }}
         title="Rename Project"
       >
-        <div>
-          <label htmlFor="projectTitle" className="block text-sm font-medium text-gray-700 mb-2">
+        <Box>
+          <Text as="label" size="2" weight="medium" mb="2" display="block">
             Project Title
-          </label>
-          <input
-            type="text"
-            id="projectTitle"
+          </Text>
+          <TextField.Root
+            placeholder="Enter project title"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter project title"
             autoFocus
           />
-          <div className="mt-4 flex justify-end space-x-2">
-            <button
+          <Flex justify="end" gap="3" mt="4">
+            <Button
+              variant="soft"
+              color="gray"
               onClick={() => {
                 setIsRenameModalOpen(false);
                 setNewTitle(project.title);
               }}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleRename}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               disabled={!newTitle.trim() || newTitle === project.title}
             >
               Save
-            </button>
-          </div>
-        </div>
+            </Button>
+          </Flex>
+        </Box>
       </Modal>
 
       <Modal
@@ -207,33 +235,36 @@ const ProjectPage: React.FC = () => {
         onClose={() => setIsImportModalOpen(false)}
         title="Import Project Data"
       >
-        <div>
-          <p className="text-sm text-gray-600 mb-4">
-            Select a JSON file to import data into this project. This will replace the current project data.
-          </p>
-          <input
-            type="file"
-            ref={fileInputRef}
-            accept=".json"
-            onChange={handleFileSelect}
-            className="block w-full text-sm text-gray-500
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-md file:border-0
-              file:text-sm file:font-semibold
-              file:bg-blue-50 file:text-blue-700
-              hover:file:bg-blue-100"
-          />
-          <div className="mt-4 flex justify-end">
-            <button
+        <Box>
+          <Text size="2" color="gray" mb="3">
+            Select a JSON file to import data into this project. This will
+            replace the current project data.
+          </Text>
+          <Box>
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept=".json"
+              onChange={handleFileSelect}
+              style={{
+                width: "100%",
+                padding: "10px 0",
+                cursor: "pointer",
+              }}
+            />
+          </Box>
+          <Flex justify="end" mt="4">
+            <Button
+              variant="soft"
+              color="gray"
               onClick={() => setIsImportModalOpen(false)}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
             >
               Cancel
-            </button>
-          </div>
-        </div>
+            </Button>
+          </Flex>
+        </Box>
       </Modal>
-    </div>
+    </Container>
   );
 };
 
