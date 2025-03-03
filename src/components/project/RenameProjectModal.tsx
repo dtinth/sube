@@ -32,7 +32,7 @@ const RenameProjectModal: React.FC<RenameProjectModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Rename Project">
       <Box>
-        <Text as="label" size="2" weight="medium" mb="2" display="block">
+        <Text as="label" size="2" weight="medium" mb="2" className="block">
           Project Title
         </Text>
         <TextField.Root

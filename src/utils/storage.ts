@@ -25,7 +25,8 @@ export const getAllProjects = async (): Promise<Project[]> => {
 
 // Get a project by ID
 export const getProject = async (id: string): Promise<Project | null> => {
-  return await get(`${PROJECT_PREFIX}${id}`);
+  const project = await get(`${PROJECT_PREFIX}${id}`);
+  return project || null;
 };
 
 // Create a new project

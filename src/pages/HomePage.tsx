@@ -56,7 +56,7 @@ const HomePage: React.FC = () => {
           <Text color="gray">Loading projects...</Text>
         </Flex>
       ) : projects.length === 0 ? (
-        <Box style={{ backgroundColor: 'var(--gray-2)' }} p="6" textAlign="center" borderRadius="large">
+        <Box style={{ backgroundColor: 'var(--gray-2)', textAlign: 'center', borderRadius: 'var(--radius-3)' }} p="6">
           <Heading size="4" as="h2" mb="2" color="gray">No projects yet</Heading>
           <Text color="gray" mb="4">Create your first project to get started</Text>
           <Button onClick={() => setIsCreateModalOpen(true)}>
@@ -81,7 +81,7 @@ const HomePage: React.FC = () => {
         title="Create New Project"
       >
         <Box>
-          <Text as="label" size="2" weight="medium" mb="2" display="block">
+          <Text as="label" size="2" weight="medium" mb="2" className="block">
             Project Title
           </Text>
           <TextField.Root 

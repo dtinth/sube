@@ -2,6 +2,7 @@ import {
   DownloadIcon,
   Pencil1Icon,
   UploadIcon,
+  SpeakerLoudIcon, // Using SpeakerLoudIcon instead of WaveformIcon
 } from "@radix-ui/react-icons";
 import { Container, Flex, Text } from "@radix-ui/themes";
 import { useStore } from "@nanostores/react";
@@ -12,6 +13,7 @@ import ProjectHeader from "../components/project/ProjectHeader";
 import ProjectMenu from "../components/project/ProjectMenu";
 import RenameProjectModal from "../components/project/RenameProjectModal";
 import ImportProjectModal from "../components/project/ImportProjectModal";
+import ImportWaveformModal from "../components/project/ImportWaveformModal";
 import { projectActions, projectStore } from "../stores/projectStore";
 
 const ProjectPage: React.FC = () => {
@@ -20,6 +22,7 @@ const ProjectPage: React.FC = () => {
   const { currentProject, isLoading, error } = useStore(projectStore);
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isImportWaveformModalOpen, setIsImportWaveformModalOpen] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -70,6 +73,13 @@ const ProjectPage: React.FC = () => {
     }
   };
 
+  const handleImportWaveform = async (waveform: number[]) => {
+    const success = await projectActions.importWaveform(waveform);
+    if (success) {
+      setIsImportWaveformModalOpen(false);
+    }
+  };
+
   // Define menu items for the ProjectMenu component
   const menuItems = [
     {
@@ -81,6 +91,11 @@ const ProjectPage: React.FC = () => {
       label: "Import",
       icon: <UploadIcon width="16" height="16" />,
       onClick: () => setIsImportModalOpen(true),
+    },
+    {
+      label: "Import Waveform",
+      icon: <SpeakerLoudIcon width="16" height="16" />,
+      onClick: () => setIsImportWaveformModalOpen(true),
     },
     {
       label: "Export",
@@ -125,6 +140,12 @@ const ProjectPage: React.FC = () => {
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
         onImport={handleImport}
+      />
+
+      <ImportWaveformModal
+        isOpen={isImportWaveformModalOpen}
+        onClose={() => setIsImportWaveformModalOpen(false)}
+        onImport={handleImportWaveform}
       />
     </Container>
   );

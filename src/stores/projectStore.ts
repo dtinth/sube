@@ -80,5 +80,26 @@ export const projectActions = {
       console.error('Failed to import project data:', error);
       return false;
     }
+  },
+
+  importWaveform: async (waveform: number[]) => {
+    const currentProject = projectStore.get().currentProject;
+    if (!currentProject) return false;
+    
+    try {
+      const updatedProject = await updateProject({
+        ...currentProject,
+        data: {
+          ...currentProject.data,
+          waveform
+        },
+        updatedAt: Date.now()
+      });
+      projectStore.setKey('currentProject', updatedProject);
+      return true;
+    } catch (error) {
+      console.error('Failed to import waveform:', error);
+      return false;
+    }
   }
 };
