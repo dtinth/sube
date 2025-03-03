@@ -30,7 +30,7 @@ interface TimelineRow {
 }
 
 /**
- * A subtitle segment that may be split across rows
+ * A subtitle segment displayed in a row
  */
 interface SubtitleSegment {
   id: string;
@@ -39,8 +39,6 @@ interface SubtitleSegment {
   text: string;
   startOffsetInRow: number; // px
   width: number; // px
-  isStart: boolean; // true if this is the start of the subtitle
-  isEnd: boolean; // true if this is the end of the subtitle
 }
 
 /**
@@ -87,94 +85,35 @@ const ProjectContent: React.FC<ProjectContentProps> = ({ projectId }) => {
       rowIndex++;
     }
     
-    // Second pass: assign subtitles to rows and handle wrapping
+    // Second pass: simplified - assign subtitles to only the row that contains their starting point
     if (sortedSubtitles.length > 0) {
-      // For each subtitle, find which row(s) it belongs to
+      // For each subtitle, find the row where it starts
       sortedSubtitles.forEach((subtitle, index) => {
         // Find the row where this subtitle starts
-        let startRowIndex = rows.findIndex(row => 
+        let rowIndex = rows.findIndex(row => 
           subtitle.start >= row.startTime && subtitle.start < row.endTime
         );
         
-        if (startRowIndex === -1) {
+        if (rowIndex === -1) {
           // If the subtitle starts before the timeline, place it in the first row
-          startRowIndex = Math.max(0, rows.findIndex(row => subtitle.end >= row.startTime && subtitle.end < row.endTime));
-          if (startRowIndex === -1) return; // Skip if completely outside the timeline
+          rowIndex = 0;
+          if (subtitle.end < rows[0].startTime) return; // Skip if completely outside the timeline
         }
         
-        // Find the row where this subtitle ends
-        let endRowIndex = rows.findIndex(row => 
-          subtitle.end > row.startTime && subtitle.end <= row.endTime
-        );
+        const row = rows[rowIndex];
         
-        if (endRowIndex === -1) {
-          // If the subtitle ends after the timeline, place it in the last row
-          endRowIndex = rows.length - 1;
-        }
+        // Add the subtitle to this row with full width
+        const startOffsetInRow = Math.max(0, (subtitle.start - row.startTime) / MS_PER_POINT * BAR_WIDTH);
+        const width = ((subtitle.end - subtitle.start) / MS_PER_POINT) * BAR_WIDTH;
         
-        // If the subtitle spans multiple rows but not too many, try to move it entirely to the next row
-        if (startRowIndex !== endRowIndex && (endRowIndex - startRowIndex <= 1)) {
-          if (startRowIndex < rows.length - 1) {
-            // Move to next row to avoid splitting
-            startRowIndex++;
-            if (endRowIndex < startRowIndex) endRowIndex = startRowIndex;
-          }
-        }
-        
-        // If this subtitle is longer than one row, we need to extend the row to fit it
-        if (startRowIndex === endRowIndex) {
-          const row = rows[startRowIndex];
-          const subtitleDuration = subtitle.end - subtitle.start;
-          const rowDuration = row.endTime - row.startTime;
-          
-          if (subtitleDuration > rowDuration) {
-            // Extend this row to fit the entire subtitle
-            const newEndTime = Math.max(row.endTime, subtitle.end);
-            const newPointCount = Math.ceil((newEndTime - row.startTime) / MS_PER_POINT);
-            
-            row.endTime = newEndTime;
-            row.pointCount = newPointCount;
-            row.width = newPointCount * BAR_WIDTH;
-          }
-          
-          // Add the subtitle to this row
-          const startOffsetInRow = Math.max(0, (subtitle.start - row.startTime) / MS_PER_POINT * BAR_WIDTH);
-          const durationInRow = subtitle.end - Math.max(subtitle.start, row.startTime);
-          const width = (durationInRow / MS_PER_POINT) * BAR_WIDTH;
-          
-          row.subtitles.push({
-            id: subtitle.id || `subtitle-${index}`,
-            start: subtitle.start,
-            end: subtitle.end,
-            text: subtitle.text,
-            startOffsetInRow,
-            width,
-            isStart: true,
-            isEnd: true
-          });
-        } else {
-          // Split the subtitle across multiple rows
-          for (let i = startRowIndex; i <= endRowIndex; i++) {
-            const row = rows[i];
-            let segmentStart = i === startRowIndex ? subtitle.start : row.startTime;
-            let segmentEnd = i === endRowIndex ? subtitle.end : row.endTime;
-            
-            const startOffsetInRow = Math.max(0, (segmentStart - row.startTime) / MS_PER_POINT * BAR_WIDTH);
-            const durationInRow = segmentEnd - Math.max(segmentStart, row.startTime);
-            const width = (durationInRow / MS_PER_POINT) * BAR_WIDTH;
-            
-            row.subtitles.push({
-              id: subtitle.id || `subtitle-${index}`,
-              start: subtitle.start,
-              end: subtitle.end,
-              text: subtitle.text,
-              startOffsetInRow,
-              width,
-              isStart: i === startRowIndex,
-              isEnd: i === endRowIndex
-            });
-          }
-        }
+        row.subtitles.push({
+          id: subtitle.id || `subtitle-${index}`,
+          start: subtitle.start,
+          end: subtitle.end,
+          text: subtitle.text,
+          startOffsetInRow,
+          width
+        });
       });
     }
     
@@ -270,30 +209,29 @@ const ProjectContent: React.FC<ProjectContentProps> = ({ projectId }) => {
           ))}
         </div>
         
-        {/* Render subtitles */}
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: `${ROW_HEIGHT - WAVEFORM_HEIGHT}px` }}>
+        {/* Render subtitles - allow them to overlay the waveform */}
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: `${ROW_HEIGHT}px` }}>
           {row.subtitles.map((subtitle, index) => (
             <div
               key={`${subtitle.id}-${index}`}
               style={{
                 position: 'absolute',
                 left: `${subtitle.startOffsetInRow}px`,
-                top: '20px',
+                top: '10px',
                 width: `${subtitle.width}px`,
+                maxHeight: `${ROW_HEIGHT - 20}px`,
                 padding: '4px',
-                backgroundColor: 'var(--accent-3)',
+                backgroundColor: 'rgba(121, 134, 203, 0.25)',
                 borderRadius: '4px',
                 fontSize: '12px',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
+                whiteSpace: 'pre-wrap',
+                overflow: 'auto',
                 border: '1px solid var(--accent-6)',
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
+                zIndex: 2
               }}
             >
               {subtitle.text}
-              {!subtitle.isStart && <span style={{ position: 'absolute', left: 0, top: 0, fontSize: '16px' }}>←</span>}
-              {!subtitle.isEnd && <span style={{ position: 'absolute', right: 0, top: 0, fontSize: '16px' }}>→</span>}
             </div>
           ))}
         </div>
