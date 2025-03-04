@@ -44,9 +44,9 @@ describe('createTimelineRows', () => {
   it('should assign subtitles to correct rows based on start time', () => {
     const waveform = Array(200).fill(0.5);
     const subtitles: SubtitleCue[] = [
-      { id: '1', start: 5000, end: 8000, text: 'Subtitle in first row' },
-      { id: '2', start: 12000, end: 15000, text: 'Subtitle in second row' },
-      { id: '3', start: 9000, end: 16000, text: 'Subtitle that starts in first row but ends in second' },
+      { start: 5000, end: 8000, text: 'Subtitle in first row' },
+      { start: 12000, end: 15000, text: 'Subtitle in second row' },
+      { start: 9000, end: 16000, text: 'Subtitle that starts in first row but ends in second' },
     ];
     
     const result = createTimelineRows(waveform, subtitles, config);
@@ -54,18 +54,18 @@ describe('createTimelineRows', () => {
     // Should have 2 rows
     expect(result.length).toBe(2);
     
-    // First row should have 2 subtitles (id 1 and 3)
+    // First row should have 2 subtitles (index 0 and 2)
     expect(result[0].subtitles.length).toBe(2);
-    expect(result[0].subtitles[0].id).toBe('1');
-    expect(result[0].subtitles[1].id).toBe('3');
+    expect(result[0].subtitles[0].index).toBe(0);
+    expect(result[0].subtitles[1].index).toBe(2);
     
     // Verify subtitle positioning in first row
     expect(result[0].subtitles[0].startOffsetInRow).toBe(500); // 5000ms / 100ms * 10px
     expect(result[0].subtitles[0].width).toBe(300); // (8000-5000)ms / 100ms * 10px
     
-    // Second row should have 1 subtitle (id 2)
+    // Second row should have 1 subtitle (index 1)
     expect(result[1].subtitles.length).toBe(1);
-    expect(result[1].subtitles[0].id).toBe('2');
+    expect(result[1].subtitles[0].index).toBe(1);
     
     // Verify subtitle positioning in second row
     expect(result[1].subtitles[0].startOffsetInRow).toBe(200); // (12000-10000)ms / 100ms * 10px
@@ -75,8 +75,8 @@ describe('createTimelineRows', () => {
   it('should handle subtitles that start before timeline', () => {
     const waveform = Array(100).fill(0.5);
     const subtitles: SubtitleCue[] = [
-      { id: '1', start: -2000, end: 3000, text: 'Starts before timeline' },
-      { id: '2', start: -5000, end: -1000, text: 'Completely before timeline' },
+      { start: -2000, end: 3000, text: 'Starts before timeline' },
+      { start: -5000, end: -1000, text: 'Completely before timeline' },
     ];
     
     const result = createTimelineRows(waveform, subtitles, config);
@@ -84,9 +84,9 @@ describe('createTimelineRows', () => {
     // Should have 1 row
     expect(result.length).toBe(1);
     
-    // First row should have 1 subtitle (id 1)
+    // First row should have 1 subtitle (index 0)
     expect(result[0].subtitles.length).toBe(1);
-    expect(result[0].subtitles[0].id).toBe('1');
+    expect(result[0].subtitles[0].index).toBe(0);
     
     // Subtitle should be positioned at the start of the row
     expect(result[0].subtitles[0].startOffsetInRow).toBe(0);
@@ -96,7 +96,7 @@ describe('createTimelineRows', () => {
   it('should handle long subtitles that exceed row width', () => {
     const waveform = Array(200).fill(0.5);
     const subtitles: SubtitleCue[] = [
-      { id: '1', start: 5000, end: 25000, text: 'Very long subtitle that spans multiple rows' },
+      { start: 5000, end: 25000, text: 'Very long subtitle that spans multiple rows' },
     ];
     
     const result = createTimelineRows(waveform, subtitles, config);

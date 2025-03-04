@@ -1,25 +1,25 @@
-import { get, set, del, keys } from 'idb-keyval';
-import { v4 as uuidv4 } from 'uuid';
-import { Project } from '../types';
+import { del, get, keys, set } from "idb-keyval";
+import { v4 as uuidv4 } from "uuid";
+import { Project } from "../types";
 
-const PROJECT_PREFIX = 'projects/';
+const PROJECT_PREFIX = "projects/";
 
 // Get all projects
 export const getAllProjects = async (): Promise<Project[]> => {
   const allKeys = await keys();
-  const projectKeys = allKeys.filter((key) => 
-    typeof key === 'string' && key.startsWith(PROJECT_PREFIX)
+  const projectKeys = allKeys.filter(
+    (key) => typeof key === "string" && key.startsWith(PROJECT_PREFIX)
   );
-  
+
   const projects: Project[] = [];
-  
+
   for (const key of projectKeys) {
     const project = await get(key);
     if (project) {
       projects.push(project);
     }
   }
-  
+
   return projects.sort((a, b) => b.updatedAt - a.updatedAt);
 };
 
@@ -33,15 +33,15 @@ export const getProject = async (id: string): Promise<Project | null> => {
 export const createProject = async (title: string): Promise<Project> => {
   const id = uuidv4();
   const now = Date.now();
-  
+
   const project: Project = {
     id,
     title,
     createdAt: now,
     updatedAt: now,
-    data: {}
+    data: {},
   };
-  
+
   await set(`${PROJECT_PREFIX}${id}`, project);
   return project;
 };
@@ -50,10 +50,10 @@ export const createProject = async (title: string): Promise<Project> => {
 export const updateProject = async (project: Project): Promise<Project> => {
   const updatedProject = {
     ...project,
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
   };
-  
-  await set(`${PROJECT_PREFIX}${project.id}`, updatedProject);
+
+  set(`${PROJECT_PREFIX}${project.id}`, updatedProject);
   return updatedProject;
 };
 
@@ -68,25 +68,28 @@ export const exportProjectToJSON = (project: Project): string => {
 };
 
 // Import project data from JSON
-export const importProjectFromJSON = async (id: string, jsonData: string): Promise<Project> => {
+export const importProjectFromJSON = async (
+  id: string,
+  jsonData: string
+): Promise<Project> => {
   try {
     const parsedData = JSON.parse(jsonData);
     const existingProject = await getProject(id);
-    
+
     if (!existingProject) {
-      throw new Error('Project not found');
+      throw new Error("Project not found");
     }
-    
+
     const updatedProject: Project = {
       ...existingProject,
       data: parsedData.data || {},
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     };
-    
+
     await updateProject(updatedProject);
     return updatedProject;
   } catch (error) {
-    console.error('Failed to import project data:', error);
+    console.error("Failed to import project data:", error);
     throw error;
   }
 };

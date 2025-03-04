@@ -14,7 +14,7 @@ export interface TimelineRow {
  * A subtitle segment displayed in a row
  */
 export interface SubtitleSegment {
-  id: string;
+  index: number; // Index in the original subtitles array
   start: number; // ms
   end: number; // ms
   text: string;
@@ -35,7 +35,6 @@ export interface TimelineConfig {
  * Subtitle cue structure as used in the application
  */
 export interface SubtitleCue {
-  id?: string;
   start: number; // ms
   end: number; // ms
   text: string;

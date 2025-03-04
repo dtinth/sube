@@ -5,6 +5,7 @@ import {
   SpeakerLoudIcon,
   TextIcon,
   UploadIcon,
+  PlayIcon,
 } from "@radix-ui/react-icons";
 import { Container, Flex, Text } from "@radix-ui/themes";
 import React, { useEffect, useState } from "react";
@@ -13,6 +14,7 @@ import ImportProjectModal from "../components/project/ImportProjectModal";
 import ImportSubtitleModal from "../components/project/ImportSubtitleModal";
 import { SubtitleCue } from "../utils/timeline/types";
 import ImportWaveformModal from "../components/project/ImportWaveformModal";
+import ImportAudioModal from "../components/project/ImportAudioModal";
 import ProjectContent from "../components/project/ProjectContent";
 import ProjectHeader from "../components/project/ProjectHeader";
 import ProjectMenu from "../components/project/ProjectMenu";
@@ -29,6 +31,7 @@ const ProjectPage: React.FC = () => {
     useState(false);
   const [isImportSubtitleModalOpen, setIsImportSubtitleModalOpen] =
     useState(false);
+  const [isImportAudioModalOpen, setIsImportAudioModalOpen] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -93,6 +96,13 @@ const ProjectPage: React.FC = () => {
     }
   };
 
+  const handleImportAudio = async (audioBlob: Blob) => {
+    const success = await projectActions.importAudio(audioBlob);
+    if (success) {
+      setIsImportAudioModalOpen(false);
+    }
+  };
+
   // Define menu items for the ProjectMenu component
   const menuItems = [
     {
@@ -109,6 +119,11 @@ const ProjectPage: React.FC = () => {
       label: "Import Waveform",
       icon: <SpeakerLoudIcon width="16" height="16" />,
       onClick: () => setIsImportWaveformModalOpen(true),
+    },
+    {
+      label: "Import Audio",
+      icon: <PlayIcon width="16" height="16" />,
+      onClick: () => setIsImportAudioModalOpen(true),
     },
     {
       label: "Import Subtitles",
@@ -170,6 +185,12 @@ const ProjectPage: React.FC = () => {
         isOpen={isImportSubtitleModalOpen}
         onClose={() => setIsImportSubtitleModalOpen(false)}
         onImport={handleImportSubtitles}
+      />
+
+      <ImportAudioModal
+        isOpen={isImportAudioModalOpen}
+        onClose={() => setIsImportAudioModalOpen(false)}
+        onImport={handleImportAudio}
       />
     </Container>
   );

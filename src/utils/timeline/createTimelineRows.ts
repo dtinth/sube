@@ -97,7 +97,7 @@ export function createTimelineRows(
       const width = ((subtitle.end - subtitle.start) / msPerPoint) * barWidth;
 
       row.subtitles.push({
-        id: subtitle.id || `subtitle-${index}`,
+        index, // Add the original index in the subtitles array
         start: subtitle.start,
         end: subtitle.end,
         text: subtitle.text,
