@@ -8,6 +8,7 @@ import {
   importProjectFromJSON,
   updateProject,
 } from "../utils/storage";
+import { serializeVtt } from "../utils/serializeVtt";
 import { SubtitleCue } from "../utils/timeline/types";
 
 // Store shape
@@ -16,6 +17,7 @@ interface ProjectStoreState {
   isLoading: boolean;
   error: string | null;
   audioBlob: Blob | null;
+  isVideo: boolean;
   currentTime: number; // Current playback time in ms
   isPlaying: boolean;
   playbackSpeed: number; // Playback speed rate (0.75, 1, 1.25, 1.5, 1.75, 2)
@@ -33,6 +35,7 @@ export const projectStore = map<ProjectStoreState>({
   isLoading: false,
   error: null,
   audioBlob: null,
+  isVideo: false,
   currentTime: 0,
   isPlaying: false,
   playbackSpeed: 1,
@@ -50,6 +53,7 @@ export const projectActions = {
     projectStore.setKey("isLoading", true);
     projectStore.setKey("error", null);
     projectStore.setKey("audioBlob", null);
+    projectStore.setKey("isVideo", false);
     projectStore.setKey("currentTime", 0);
     projectStore.setKey("isPlaying", false);
     projectStore.setKey("playbackSpeed", 1);
@@ -59,16 +63,19 @@ export const projectActions = {
       if (projectData) {
         projectStore.setKey("currentProject", projectData);
 
-        // Check if the project has an audio blob stored
+        // Check if the project has an audio/video blob stored
         if (projectData.data?.audioBlobId) {
           try {
-            const audioBlobKey = `audio/${projectData.data.audioBlobId}`;
-            const audioBlob = await get(audioBlobKey);
-            if (audioBlob instanceof Blob) {
-              projectStore.setKey("audioBlob", audioBlob);
+            const mediaBlobKey = `audio/${projectData.data.audioBlobId}`;
+            const mediaBlob = await get(mediaBlobKey);
+            if (mediaBlob instanceof Blob) {
+              projectStore.setKey("audioBlob", mediaBlob);
+              // Set isVideo flag based on stored type
+              const isVideo = projectData.data?.isVideo === true;
+              projectStore.setKey("isVideo", isVideo);
             }
-          } catch (audioError) {
-            console.error("Failed to load audio blob:", audioError);
+          } catch (mediaError) {
+            console.error("Failed to load media blob:", mediaError);
           }
         }
       } else {
@@ -109,6 +116,23 @@ export const projectActions = {
       filename: `${currentProject.title.replace(/\s+/g, "_")}_${
         currentProject.id
       }.json`,
+    };
+  },
+
+  exportVTT: () => {
+    const currentProject = projectStore.get().currentProject;
+    if (!currentProject || !currentProject.data?.subtitles) return null;
+    
+    // Use the subtitles array which is already compatible with the SubtitleCue interface
+    // that matches what serializeVtt expects
+    const subtitles = currentProject.data.subtitles;
+    const vttData = serializeVtt(subtitles);
+    
+    return {
+      vttData,
+      filename: `${currentProject.title.replace(/\s+/g, "_")}_${
+        currentProject.id
+      }.vtt`,
     };
   },
 
@@ -171,33 +195,38 @@ export const projectActions = {
     }
   },
 
-  importAudio: async (audioBlob: Blob) => {
+  importAudio: async (mediaBlob: Blob) => {
     const currentProject = projectStore.get().currentProject;
     if (!currentProject) return false;
 
     try {
-      // Generate a unique ID for the audio blob
-      const audioBlobId = uuidv4();
-      const audioBlobKey = `audio/${audioBlobId}`;
+      // Determine if this is a video or audio file
+      const isVideo = mediaBlob.type.startsWith("video/");
+      
+      // Generate a unique ID for the media blob
+      const mediaBlobId = uuidv4();
+      const mediaBlobKey = `audio/${mediaBlobId}`;
 
-      // Store the audio blob in IndexedDB
-      await set(audioBlobKey, audioBlob);
+      // Store the media blob in IndexedDB
+      await set(mediaBlobKey, mediaBlob);
 
-      // Update the project with the audio blob ID reference
+      // Update the project with the media blob ID reference
       const updatedProject = await updateProject({
         ...currentProject,
         data: {
           ...currentProject.data,
-          audioBlobId,
+          audioBlobId: mediaBlobId,
+          isVideo,
         },
         updatedAt: Date.now(),
       });
 
       projectStore.setKey("currentProject", updatedProject);
-      projectStore.setKey("audioBlob", audioBlob);
+      projectStore.setKey("audioBlob", mediaBlob);
+      projectStore.setKey("isVideo", isVideo);
       return true;
     } catch (error) {
-      console.error("Failed to import audio:", error);
+      console.error("Failed to import media:", error);
       return false;
     }
   },

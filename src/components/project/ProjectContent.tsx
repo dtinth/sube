@@ -3,10 +3,10 @@ import { Card, Flex } from "@radix-ui/themes";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { projectActions, projectStore } from "../../stores/projectStore";
 import { createTimelineRows } from "../../utils/timeline/createTimelineRows";
-import { SubtitleCue } from "../../utils/timeline/types";
 import EditSubtitleModal from "./EditSubtitleModal";
 import {
   AudioPlayer,
+  VideoPlayer,
   EmptyTimeline,
   KeyboardShortcuts,
   TimelineHeader,
@@ -30,18 +30,16 @@ const MS_PER_POINT = 100; // each point represents 100ms
  * Shows waveform and subtitles data as a timeline visualization
  */
 const ProjectContent: React.FC<ProjectContentProps> = ({ projectId }) => {
-  const { currentProject, audioBlob, currentTime, isPlaying, playbackSpeed, editModal } =
+  const { currentProject, audioBlob, isVideo, currentTime, isPlaying, playbackSpeed, editModal } =
     useStore(projectStore);
-  const waveform = currentProject?.data?.waveform as number[] | undefined;
-  const subtitles = currentProject?.data?.subtitles as
-    | SubtitleCue[]
-    | undefined;
+  const waveform = currentProject?.data?.waveform;
+  const subtitles = currentProject?.data?.subtitles;
 
   // Reference to the container element for focus management
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Create audio URL from blob
-  const audioUrl = useMemo(
+  // Create media URL from blob
+  const mediaUrl = useMemo(
     () => (audioBlob ? URL.createObjectURL(audioBlob) : null),
     [audioBlob]
   );
@@ -55,23 +53,26 @@ const ProjectContent: React.FC<ProjectContentProps> = ({ projectId }) => {
     });
   }, [waveform, subtitles]);
 
-  // Clean up audio URL when component unmounts
+  // Clean up media URL when component unmounts
   useEffect(() => {
     return () => {
-      if (audioUrl) {
-        URL.revokeObjectURL(audioUrl);
+      if (mediaUrl) {
+        URL.revokeObjectURL(mediaUrl);
       }
     };
-  }, [audioUrl]);
+  }, [mediaUrl]);
 
-  // Handle audio time update
+  // Handle media time update
   const handleTimeUpdate = useCallback(() => {
-    const audio = document.querySelector("audio");
-    if (!audio || !subtitles) return;
+    const media = isVideo 
+      ? document.querySelector("video") 
+      : document.querySelector("audio");
+    
+    if (!media || !subtitles) return;
 
-    const currentTimeMs = audio.currentTime * 1000;
+    const currentTimeMs = media.currentTime * 1000;
     projectActions.setCurrentTime(currentTimeMs);
-  }, [subtitles]);
+  }, [subtitles, isVideo]);
 
   // Toggle play/pause handler
   const handleTogglePlayPause = useCallback(() => {
@@ -83,8 +84,8 @@ const ProjectContent: React.FC<ProjectContentProps> = ({ projectId }) => {
     projectActions.setCurrentTime(newTime);
   }, []);
 
-  // Handle audio playback ending
-  const handleAudioEnded = useCallback(() => {
+  // Handle media playback ending
+  const handleMediaEnded = useCallback(() => {
     projectActions.pause();
   }, []);
 
@@ -223,6 +224,118 @@ const ProjectContent: React.FC<ProjectContentProps> = ({ projectId }) => {
             return;
           }
         }
+        
+        // Comma key (,) - Move endpoint to playhead or start of next segment to playhead
+        if (e.code === "Comma") {
+          e.preventDefault();
+          
+          // Round the current time to the nearest 100ms
+          const roundedCurrentTime = Math.round(currentTime / 100) * 100;
+          
+          // Find all subtitles across all rows
+          const allSubtitles = timelineRows.flatMap((row) => row.subtitles);
+          
+          // Sort subtitles by start time for consistent processing
+          const sortedSubtitles = [...allSubtitles].sort((a, b) => a.start - b.start);
+          
+          // Find the active subtitle that contains the current time
+          const activeSubtitle = sortedSubtitles.find(
+            (sub) => currentTime >= sub.start && currentTime <= sub.end
+          );
+          
+          if (activeSubtitle) {
+            // If playhead is inside a segment and end time isn't already at playhead
+            if (Math.abs(activeSubtitle.end - roundedCurrentTime) > 10) {
+              // Move the endpoint to the playhead
+              projectActions.adjustSubtitleTiming(
+                activeSubtitle.index,
+                "endTime",
+                roundedCurrentTime - activeSubtitle.end
+              );
+            } else {
+              // Find the next subtitle after current active one
+              const nextSubtitleIndex = sortedSubtitles.findIndex(s => s.index === activeSubtitle.index) + 1;
+              if (nextSubtitleIndex < sortedSubtitles.length) {
+                const nextSubtitle = sortedSubtitles[nextSubtitleIndex];
+                // Move the next subtitle's start to the playhead
+                projectActions.adjustSubtitleTiming(
+                  nextSubtitle.index,
+                  "startTime",
+                  roundedCurrentTime - nextSubtitle.start
+                );
+              }
+            }
+          } else {
+            // No active subtitle - find the next subtitle after current time
+            const nextSubtitle = sortedSubtitles.find(sub => sub.start > currentTime);
+            if (nextSubtitle) {
+              // Move the next subtitle's start to the playhead
+              projectActions.adjustSubtitleTiming(
+                nextSubtitle.index,
+                "startTime",
+                roundedCurrentTime - nextSubtitle.start
+              );
+            }
+          }
+          return;
+        }
+        
+        // Period key (.) - Move start point to playhead or end of previous segment to playhead
+        if (e.code === "Period") {
+          e.preventDefault();
+          
+          // Round the current time to the nearest 100ms
+          const roundedCurrentTime = Math.round(currentTime / 100) * 100;
+          
+          // Find all subtitles across all rows
+          const allSubtitles = timelineRows.flatMap((row) => row.subtitles);
+          
+          // Sort subtitles by start time for consistent processing
+          const sortedSubtitles = [...allSubtitles].sort((a, b) => a.start - b.start);
+          
+          // Find the active subtitle that contains the current time
+          const activeSubtitle = sortedSubtitles.find(
+            (sub) => currentTime >= sub.start && currentTime <= sub.end
+          );
+          
+          if (activeSubtitle) {
+            // If playhead is inside a segment and start time isn't already at playhead
+            if (Math.abs(activeSubtitle.start - roundedCurrentTime) > 10) {
+              // Move the startpoint to the playhead
+              projectActions.adjustSubtitleTiming(
+                activeSubtitle.index,
+                "startTime",
+                roundedCurrentTime - activeSubtitle.start
+              );
+            } else {
+              // Find the previous subtitle before current active one
+              const prevSubtitleIndex = sortedSubtitles.findIndex(s => s.index === activeSubtitle.index) - 1;
+              if (prevSubtitleIndex >= 0) {
+                const prevSubtitle = sortedSubtitles[prevSubtitleIndex];
+                // Move the previous subtitle's end to the playhead
+                projectActions.adjustSubtitleTiming(
+                  prevSubtitle.index,
+                  "endTime",
+                  roundedCurrentTime - prevSubtitle.end
+                );
+              }
+            }
+          } else {
+            // No active subtitle - find the previous subtitle before current time
+            const prevSubtitle = [...sortedSubtitles]
+              .reverse()
+              .find(sub => sub.end < currentTime);
+            if (prevSubtitle) {
+              // Move the previous subtitle's end to the playhead
+              projectActions.adjustSubtitleTiming(
+                prevSubtitle.index,
+                "endTime",
+                roundedCurrentTime - prevSubtitle.end
+              );
+            }
+          }
+          return;
+        }
       }
     },
     [audioBlob, currentTime, subtitles, timelineRows, playbackSpeed]
@@ -258,21 +371,33 @@ const ProjectContent: React.FC<ProjectContentProps> = ({ projectId }) => {
           waveform={waveform}
           subtitles={subtitles}
           audioBlob={audioBlob}
+          isVideo={isVideo}
           isPlaying={isPlaying}
           currentTime={currentTime}
           playbackSpeed={playbackSpeed}
           onTogglePlayPause={handleTogglePlayPause}
         />
 
-        {/* Audio player component */}
-        <AudioPlayer
-          audioUrl={audioUrl}
-          isPlaying={isPlaying}
-          currentTime={currentTime}
-          playbackSpeed={playbackSpeed}
-          onTimeUpdate={handleTimeUpdate}
-          onEnded={handleAudioEnded}
-        />
+        {/* Media player component */}
+        {isVideo ? (
+          <VideoPlayer
+            videoUrl={mediaUrl}
+            isPlaying={isPlaying}
+            currentTime={currentTime}
+            playbackSpeed={playbackSpeed}
+            onTimeUpdate={handleTimeUpdate}
+            onEnded={handleMediaEnded}
+          />
+        ) : (
+          <AudioPlayer
+            audioUrl={mediaUrl}
+            isPlaying={isPlaying}
+            currentTime={currentTime}
+            playbackSpeed={playbackSpeed}
+            onTimeUpdate={handleTimeUpdate}
+            onEnded={handleMediaEnded}
+          />
+        )}
 
         {waveform ? (
           /* Timeline container with all timeline components */

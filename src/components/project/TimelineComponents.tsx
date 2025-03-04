@@ -28,6 +28,7 @@ interface TimelineHeaderProps {
   waveform: number[] | undefined;
   subtitles: SubtitleCue[] | undefined;
   audioBlob: Blob | null;
+  isVideo: boolean;
   isPlaying: boolean;
   currentTime: number;
   playbackSpeed: number;
@@ -35,7 +36,7 @@ interface TimelineHeaderProps {
 }
 
 export const TimelineHeader: React.FC<TimelineHeaderProps> = React.memo(
-  ({ projectId, waveform, subtitles, audioBlob, isPlaying, currentTime, playbackSpeed, onTogglePlayPause }) => {
+  ({ projectId, waveform, subtitles, audioBlob, isVideo, isPlaying, currentTime, playbackSpeed, onTogglePlayPause }) => {
     return (
       <>
         <Text color="gray" size="2">
@@ -63,7 +64,7 @@ export const TimelineHeader: React.FC<TimelineHeaderProps> = React.memo(
           <Text size="2" color="gray" mb="2">
             Waveform: {waveform.length} points ({(waveform.length / 10).toFixed(1)} seconds)
             {subtitles && ` • Subtitles: ${subtitles.length} cues`}
-            {audioBlob && ` • Audio: ${Math.round(audioBlob.size / 1024)} KB`}
+            {audioBlob && ` • ${isVideo ? 'Video' : 'Audio'}: ${Math.round(audioBlob.size / 1024)} KB`}
           </Text>
         )}
       </>
@@ -151,6 +152,102 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = React.memo(
         onEnded={onEnded}
         style={{ display: "none" }}
       />
+    );
+  }
+);
+
+interface VideoPlayerProps {
+  videoUrl: string | null;
+  isPlaying: boolean;
+  currentTime: number;
+  playbackSpeed: number;
+  onTimeUpdate: () => void;
+  onEnded: () => void;
+}
+
+export const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
+  ({ videoUrl, isPlaying, currentTime, playbackSpeed, onTimeUpdate, onEnded }) => {
+    const videoRef = useRef<HTMLVideoElement | null>(null);
+    const intervalRef = useRef<number | null>(null);
+    
+    // Setup more frequent time updates during playback (every 100ms)
+    useEffect(() => {
+      // Clear any existing interval
+      if (intervalRef.current) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      
+      // Only setup interval if playing
+      if (isPlaying && videoRef.current) {
+        // Setup interval for frequent updates
+        intervalRef.current = window.setInterval(() => {
+          if (videoRef.current) {
+            onTimeUpdate();
+          }
+        }, 100);
+      }
+      
+      // Cleanup on unmount or when isPlaying changes
+      return () => {
+        if (intervalRef.current) {
+          window.clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      };
+    }, [isPlaying, onTimeUpdate]);
+
+    // Handle video playback control
+    useEffect(() => {
+      if (!videoRef.current) return;
+
+      if (isPlaying) {
+        videoRef.current.play().catch((error) => {
+          console.error("Error playing video:", error);
+          onEnded();
+        });
+      } else {
+        videoRef.current.pause();
+      }
+    }, [isPlaying, onEnded]);
+
+    // Update video current time when changed from store
+    useEffect(() => {
+      if (!videoRef.current) return;
+      if (Math.abs(videoRef.current.currentTime * 1000 - currentTime) > 100) {
+        videoRef.current.currentTime = currentTime / 1000;
+      }
+    }, [currentTime]);
+
+    // Update playback rate when changed from store
+    useEffect(() => {
+      if (!videoRef.current) return;
+      videoRef.current.playbackRate = playbackSpeed;
+    }, [playbackSpeed]);
+
+    if (!videoUrl) return null;
+
+    return (
+      <div style={{ 
+        borderRadius: 'var(--radius-3)', 
+        overflow: 'hidden', 
+        marginBottom: '12px',
+        maxHeight: '250px',
+      }}>
+        <video
+          ref={videoRef}
+          src={videoUrl}
+          onTimeUpdate={onTimeUpdate}
+          onEnded={onEnded}
+          style={{ 
+            width: '100%',
+            maxHeight: '250px',
+            objectFit: 'contain',
+            backgroundColor: 'black',
+          }}
+          controls={false}
+        />
+      </div>
     );
   }
 );
@@ -418,6 +515,8 @@ export const KeyboardShortcuts: React.FC = React.memo(() => {
         <kbd style={kbdStyle}>←/→</kbd> seek 3s
         <kbd style={kbdStyle}>[/]</kbd> adjust start time
         <kbd style={kbdStyle}>{"{"}</kbd>/<kbd style={kbdStyle}>{"}"}</kbd> adjust end time
+        <kbd style={kbdStyle}>,</kbd> move end to playhead
+        <kbd style={kbdStyle}>.</kbd> move start to playhead
         <kbd style={kbdStyle}>-</kbd>/<kbd style={kbdStyle}>+</kbd> speed
       </Text>
     </Flex>

@@ -87,13 +87,17 @@ const EditSubtitleModal: React.FC<EditSubtitleModalProps> = ({
           value={editText}
           onChange={(e) => setEditText(e.target.value)}
           onKeyDown={handleKeyDown}
-          style={{
-            minHeight: "120px",
-            width: "100%",
-            fontSize: "16px",
-            lineHeight: "1.5",
-            resize: "vertical",
-          }}
+          size={"3"}
+          style={
+            {
+              minHeight: "120px",
+              width: "100%",
+              lineHeight: "1.5",
+              resize: "vertical",
+              "--font-size-3": "28px",
+              "--line-height-3": "36px",
+            } as React.CSSProperties
+          }
           placeholder="Enter subtitle text..."
         />
 
@@ -109,7 +113,9 @@ const EditSubtitleModal: React.FC<EditSubtitleModalProps> = ({
         <div style={{ fontSize: "12px", color: "var(--gray-9)" }}>
           Tip: Press Ctrl+Enter to save
         </div>
-        <div style={{ fontSize: "12px", color: "var(--gray-9)", marginTop: "4px" }}>
+        <div
+          style={{ fontSize: "12px", color: "var(--gray-9)", marginTop: "4px" }}
+        >
           Tip: Add blank lines to split this subtitle into multiple segments
         </div>
       </Flex>

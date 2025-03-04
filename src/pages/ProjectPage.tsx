@@ -6,6 +6,7 @@ import {
   TextIcon,
   UploadIcon,
   PlayIcon,
+  FileTextIcon,
 } from "@radix-ui/react-icons";
 import { Container, Flex, Text } from "@radix-ui/themes";
 import React, { useEffect, useState } from "react";
@@ -74,6 +75,25 @@ const ProjectPage: React.FC = () => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
+  
+  const handleExportVTT = () => {
+    const exportData = projectActions.exportVTT();
+    if (!exportData) return;
+
+    const { vttData, filename } = exportData;
+    const blob = new Blob([vttData], { type: "text/vtt" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+
+    // Cleanup
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const handleImport = async (jsonData: string) => {
     const success = await projectActions.importProjectData(jsonData);
@@ -121,7 +141,7 @@ const ProjectPage: React.FC = () => {
       onClick: () => setIsImportWaveformModalOpen(true),
     },
     {
-      label: "Import Audio",
+      label: "Import Audio/Video",
       icon: <PlayIcon width="16" height="16" />,
       onClick: () => setIsImportAudioModalOpen(true),
     },
@@ -134,6 +154,11 @@ const ProjectPage: React.FC = () => {
       label: "Export",
       icon: <DownloadIcon width="16" height="16" />,
       onClick: handleExport,
+    },
+    {
+      label: "Export VTT",
+      icon: <FileTextIcon width="16" height="16" />,
+      onClick: handleExportVTT,
     },
   ];
 
