@@ -2,7 +2,6 @@ import { useStore } from "@nanostores/react";
 import {
   DownloadIcon,
   Pencil1Icon,
-  SpeakerLoudIcon,
   TextIcon,
   UploadIcon,
   PlayIcon,
@@ -135,11 +134,7 @@ const ProjectPage: React.FC = () => {
       icon: <UploadIcon width="16" height="16" />,
       onClick: () => setIsImportModalOpen(true),
     },
-    {
-      label: "Import Waveform",
-      icon: <SpeakerLoudIcon width="16" height="16" />,
-      onClick: () => setIsImportWaveformModalOpen(true),
-    },
+    // Import Waveform option removed as it's now integrated with Import Audio/Video
     {
       label: "Import Audio/Video",
       icon: <PlayIcon width="16" height="16" />,
