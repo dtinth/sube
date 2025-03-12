@@ -57,9 +57,20 @@ export const updateProject = async (project: Project): Promise<Project> => {
   return updatedProject;
 };
 
+const AUDIO_PREFIX = "audio/";
+
 // Delete a project
 export const deleteProject = async (id: string): Promise<void> => {
+  // First, get the project to check if it has an audio blob
+  const project = await get(`${PROJECT_PREFIX}${id}`);
+  
+  // Delete the project data
   await del(`${PROJECT_PREFIX}${id}`);
+  
+  // If there's an audio blob associated with this project, delete it too
+  if (project?.data?.audioBlobId) {
+    await del(`${AUDIO_PREFIX}${project.data.audioBlobId}`);
+  }
 };
 
 // Export project data to JSON
