@@ -1,25 +1,28 @@
 import { useStore } from "@nanostores/react";
 import {
   DownloadIcon,
-  Pencil1Icon,
-  TextIcon,
-  UploadIcon,
-  PlayIcon,
   FileTextIcon,
+  Pencil1Icon,
+  PlayIcon,
+  TextIcon,
+  TrashIcon,
+  UploadIcon,
 } from "@radix-ui/react-icons";
 import { Container, Flex, Text } from "@radix-ui/themes";
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import DeleteProjectModal from "../components/project/DeleteProjectModal";
+import ImportAudioModal from "../components/project/ImportAudioModal";
 import ImportProjectModal from "../components/project/ImportProjectModal";
 import ImportSubtitleModal from "../components/project/ImportSubtitleModal";
-import { SubtitleCue } from "../utils/timeline/types";
 import ImportWaveformModal from "../components/project/ImportWaveformModal";
-import ImportAudioModal from "../components/project/ImportAudioModal";
 import ProjectContent from "../components/project/ProjectContent";
 import ProjectHeader from "../components/project/ProjectHeader";
-import ProjectMenu from "../components/project/ProjectMenu";
+import ProjectMenu, { MenuItem } from "../components/project/ProjectMenu";
 import RenameProjectModal from "../components/project/RenameProjectModal";
 import { projectActions, projectStore } from "../stores/projectStore";
+import { deleteProject } from "../utils/storage";
+import { SubtitleCue } from "../utils/timeline/types";
 
 const ProjectPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,6 +35,7 @@ const ProjectPage: React.FC = () => {
   const [isImportSubtitleModalOpen, setIsImportSubtitleModalOpen] =
     useState(false);
   const [isImportAudioModalOpen, setIsImportAudioModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -74,7 +78,7 @@ const ProjectPage: React.FC = () => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
-  
+
   const handleExportVTT = () => {
     const exportData = projectActions.exportVTT();
     if (!exportData) return;
@@ -122,8 +126,19 @@ const ProjectPage: React.FC = () => {
     }
   };
 
+  const handleDeleteProject = async () => {
+    if (!currentProject || !id) return;
+    
+    try {
+      await deleteProject(id);
+      navigate('/');
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+    }
+  };
+
   // Define menu items for the ProjectMenu component
-  const menuItems = [
+  const menuItems: MenuItem[] = [
     {
       label: "Rename",
       icon: <Pencil1Icon width="16" height="16" />,
@@ -154,6 +169,13 @@ const ProjectPage: React.FC = () => {
       label: "Export VTT",
       icon: <FileTextIcon width="16" height="16" />,
       onClick: handleExportVTT,
+    },
+    // Add the delete option at the end of the menu
+    {
+      label: "Delete Project",
+      icon: <TrashIcon width="16" height="16" />,
+      onClick: () => setIsDeleteModalOpen(true),
+      color: "red",
     },
   ];
 
@@ -211,6 +233,13 @@ const ProjectPage: React.FC = () => {
         isOpen={isImportAudioModalOpen}
         onClose={() => setIsImportAudioModalOpen(false)}
         onImport={handleImportAudio}
+      />
+
+      <DeleteProjectModal
+        project={currentProject}
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteProject}
       />
     </Container>
   );

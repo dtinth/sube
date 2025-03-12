@@ -2,10 +2,11 @@ import { DotsVerticalIcon } from "@radix-ui/react-icons";
 import { Button, DropdownMenu } from "@radix-ui/themes";
 import React, { ReactNode } from "react";
 
-interface MenuItem {
+export interface MenuItem {
   label: string;
   icon?: ReactNode;
   onClick: () => void;
+  color?: "red";
 }
 
 interface ProjectMenuProps {
@@ -27,7 +28,11 @@ const ProjectMenu: React.FC<ProjectMenuProps> = ({ items }) => {
       </DropdownMenu.Trigger>
       <DropdownMenu.Content>
         {items.map((item, index) => (
-          <DropdownMenu.Item key={index} onClick={item.onClick}>
+          <DropdownMenu.Item 
+            key={index} 
+            onClick={item.onClick} 
+            color={item.color}
+          >
             {item.icon}
             {item.label}
           </DropdownMenu.Item>
